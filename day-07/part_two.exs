@@ -6,7 +6,7 @@ defmodule HandyHaversacks do
 
     reference
     |> Map.get(@shiny_gold)
-    |> Enum.reduce([], &find_all_contained(&1, &2, reference))
+    |> find_all_contained(reference)
   end
 
   def build_reference(filename) do
@@ -37,26 +37,25 @@ defmodule HandyHaversacks do
     %{color: captures["color"], number: String.to_integer(captures["num"])}
   end
 
-  def find_all_contained(color, acc, reference) do
-    IO.inspect [color, acc, reference]
-    contained =
-      reference[color]
-      |> Enum.map(&find_contained(&1, reference))
-      |> List.flatten()
-
-    acc ++ contained
+  def find_all_contained(bags, reference) when is_list(bags) do
+    bags
+    |> Enum.map(&find_contained(&1, reference))
+    |> List.flatten()
+    |> Enum.reduce(0, &(&1.number + &2))
   end
 
-  defp find_contained(%{color: color, number: number}, reference) do
+  defp find_contained(bag = %{color: color, number: number}, reference) do
     case reference[color] do
       [] ->
         [number]
 
       contained ->
-        [number | Enum.map(contained, &find_contained(&1, reference))]
+        [bag | Enum.map(contained, &find_contained(&1, reference))]
     end
   end
 end
 
 # result = HandyHaversacks.run("input.txt")
-# count = Enum.filter(result, fn {_, bags} -> "shiny gold" in bags end) |> Enum.count()
+# 201 is too low
+# tricky because you have to carry the number of bags down
+# would almost be easier to expand
