@@ -4,7 +4,7 @@ defmodule HandyHaversacks do
 
     reference
     |> Map.keys()
-    |> Enum.map(&find_all_contained(&1, reference))
+    |> Enum.reduce(%{}, &find_all_contained(&1, &2, reference))
   end
 
   def build_reference(filename) do
@@ -13,17 +13,21 @@ defmodule HandyHaversacks do
     |> String.split("\n")
     |> Stream.map(&String.slice(&1, 0..-2))
     |> Stream.map(&String.split(&1, " bags contain "))
-    |> Enum.reduce(%{}, &process_haversack/2)
+    |> Enum.reduce(&process_haversack/2)
   end
 
-  def find_all_contained(color, reference) do
-    if reference[color] == [] do
-      []
-    else
-      reference[color]
-      |> Enum.map(& &1.color)
-      |> Enum.flat_map(&find_all_contained(&1, reference))
-    end
+  def find_all_contained(color, acc, reference) do
+    contained =
+      if reference[color] == [] do
+        []
+      else
+        reference[color]
+        |> Enum.map(& &1.color)
+        |> Enum.map(&find_all_contained(&1, reference))
+        |> List.flatten()
+      end
+
+    Map.put(acc, color, contained)
   end
 
   def process_haversack([bag, "no other bags"], acc) do
@@ -43,6 +47,11 @@ defmodule HandyHaversacks do
     r = ~r/(?<num>\d+)\s(?<color>[\w|\s]+)\sbags?/
     captures = Regex.named_captures(r, haversack)
     %{color: captures["color"], number: String.to_integer(captures["num"])}
+  end
+
+  defp find_contained({color, []}), do: color
+  defp find_contained({color, contains}) do
+    
   end
 end
 
